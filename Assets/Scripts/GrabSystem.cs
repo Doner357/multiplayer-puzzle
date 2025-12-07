@@ -1,43 +1,38 @@
+using System;
+using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class GrabSystem : MonoBehaviour
 {
     [Header("Settings")]
-    public float grabRange = 1.5f; // 抓取距離
-    public KeyCode grabKey = KeyCode.E; // 抓取按鍵
-    public Transform holdPoint; // 抓取點 (手的位置)
+    public float grabRange = 1.5f;
+    public Transform holdPoint;
 
     [Header("Debug")]
-    public Rigidbody grabbedObject; // 目前抓到的東西
-    private FixedJoint joint; // 連接關節
+    public Rigidbody grabbedObject;
+    private FixedJoint joint;
+
+    private bool isGrabbing = false;
 
     void Update()
     {
-        // 按下抓取鍵
-        if (Input.GetKeyDown(grabKey))
-        {
-            TryGrab();
-        }
-        // 放開抓取鍵
-        else if (Input.GetKeyUp(grabKey))
-        {
-            Release();
-        }
+
     }
 
     void TryGrab()
     {
-        // 1. 發射射線 (Raycast) 偵測前方
-        // origin: 身體中心, direction: 面向前方, maxDistance: 抓取距離
         RaycastHit hit;
         if (Physics.Raycast(transform.position, transform.forward, out hit, grabRange))
         {
-            // 2. 檢查打到的東西有沒有 Rigidbody (代表是物理物件)
             Rigidbody targetRb = hit.collider.GetComponent<Rigidbody>();
+            Transform targetTr = targetRb.GetComponent<Transform>();
 
             if (targetRb != null && !targetRb.isKinematic)
             {
-                // 抓到了！
+                Vector3 targetPos = targetTr.position;
+                targetPos.y += 0.1f;
+                targetTr.position = targetPos;
                 grabbedObject = targetRb;
                 CreateJoint(targetRb);
             }
@@ -46,13 +41,10 @@ public class GrabSystem : MonoBehaviour
 
     void CreateJoint(Rigidbody targetRb)
     {
-        // 在「自己身上」新增一個 FixedJoint
         joint = gameObject.AddComponent<FixedJoint>();
 
-        // 設定連接對象
         joint.connectedBody = targetRb;
 
-        // 設定斷裂力 (可選：拉力太大會斷開)
         joint.breakForce = Mathf.Infinity;
     }
 
@@ -64,6 +56,23 @@ public class GrabSystem : MonoBehaviour
             Destroy(joint);
             joint = null;
             grabbedObject = null;
+        }
+    }
+
+    public void Grab(InputAction.CallbackContext context)
+    {
+        if (context.performed)
+        {
+            if (!isGrabbing)
+            {
+                isGrabbing = true;
+                TryGrab();
+            }
+            else
+            {
+                isGrabbing = false;
+                Release();
+            }
         }
     }
 

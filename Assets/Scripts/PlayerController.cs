@@ -1,64 +1,80 @@
+using System;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
-// 這是必備組件的屬性，防止你忘記加 Rigidbody
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
 {
+
     [Header("Settings")]
-    public float moveSpeed = 5f;
-    public float rotateSpeed = 10f;
-    public float jumpForce = 5f;
+    [SerializeField] private Transform cameraTransform;
+    [SerializeField] private bool shouldFaceMoveDirection = false;
+    [SerializeField] private float moveSpeed = 0.5f;
+    [SerializeField] private float moveInAirAttenuation = 0.2f;
+    [SerializeField] private float jumpHeight = 5f;
+    [SerializeField] private float groundedThreshold = 1.05f;
 
-    private Rigidbody rb;
-    private Vector3 inputVector;
+    private Rigidbody rigid;
+    private Vector3 playerInput;
+    private Vector3 moveDirection;
+    private Vector3 velocity;
 
-    // Start 在遊戲開始時執行一次
     void Start()
     {
-        rb = GetComponent<Rigidbody>();
+        rigid = GetComponent<Rigidbody>();
     }
 
-    // Update 每幀執行，適合處理 Input
     void Update()
     {
-        // 取得鍵盤輸入 (WASD 或 方向鍵)，回傳值為 -1 到 1
-        float h = Input.GetAxisRaw("Horizontal");
-        float v = Input.GetAxisRaw("Vertical");
+        Vector3 forward = cameraTransform.forward;
+        Vector3 right = cameraTransform.right;
 
-        // 建立移動向量 (忽略 Y 軸)
-        inputVector = new Vector3(h, 0, v).normalized;
+        forward.y = 0;
+        right.y = 0;
 
-        // 跳躍邏輯 (簡單版：按空白鍵且垂直速度接近 0)
-        if (Input.GetKeyDown(KeyCode.Space) && Mathf.Abs(rb.linearVelocity.y) < 0.1f)
+        forward.Normalize();
+        right.Normalize();
+
+        moveDirection = forward * playerInput.z + right * playerInput.x;
+
+        if (shouldFaceMoveDirection && moveDirection.sqrMagnitude > 0.001f)
         {
-            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            Quaternion toRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
+            transform.rotation = Quaternion.Slerp(transform.rotation, toRotation, 10.0f * Time.deltaTime);
         }
     }
 
-    // FixedUpdate 固定頻率執行 (預設 0.02秒)，所有物理運算必須寫在這裡！
     void FixedUpdate()
     {
-        MoveLogic();
+        bool grounded =IsGrounded();
+        velocity = moveDirection;
+        velocity.Normalize();
+        velocity = moveSpeed * velocity;
+        if (!grounded)
+        {
+            velocity *= moveInAirAttenuation;
+        }
+        velocity.y = Convert.ToSingle(grounded) * jumpHeight * playerInput.y;
+        rigid.AddForce(velocity, ForceMode.Impulse);
+        Debug.Log($"Velocity: {velocity}");
     }
 
-    void MoveLogic()
+    bool IsGrounded()
     {
-        if (inputVector.magnitude > 0.1f)
-        {
-            // 1. 移動：直接設定速度 (保留原本的 Y 軸速度以維持重力)
-            // Unity 6 建議使用 linearVelocity 取代舊版的 velocity
-            Vector3 newVelocity = inputVector * moveSpeed;
-            rb.linearVelocity = new Vector3(newVelocity.x, rb.linearVelocity.y, newVelocity.z);
+        return Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, groundedThreshold);
+    }
 
-            // 2. 轉向：讓角色面向移動方向
-            Quaternion targetRotation = Quaternion.LookRotation(inputVector);
-            // Slerp 是一個平滑插值函數，讓轉身有過渡動畫
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotateSpeed * Time.fixedDeltaTime);
-        }
-        else
-        {
-            // 如果沒按鍵，水平速度歸零 (停止滑行)，但保留垂直重力
-            rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
-        }
+    public void Move(InputAction.CallbackContext context)
+    {
+        Vector2 moveInput = context.ReadValue<Vector2>();
+        playerInput.x = moveInput.x;
+        playerInput.z = moveInput.y;
+    }
+
+    public void Jump(InputAction.CallbackContext context)
+    {
+        Debug.Log($"Jumpping {context.performed}");
+        playerInput.y = Convert.ToSingle(context.performed);
     }
 }
