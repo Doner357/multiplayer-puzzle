@@ -1,13 +1,15 @@
 using System;
 using Unity.Cinemachine;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class GrabSystem : MonoBehaviour
+public class InteractionSystem : MonoBehaviour
 {
     [Header("Settings")]
     public float grabRange = 1.5f;
     public Transform holdPoint;
+    public float throwForce = 2.5f;
 
     [Header("Debug")]
     public Rigidbody grabbedObject;
@@ -48,13 +50,17 @@ public class GrabSystem : MonoBehaviour
         joint.breakForce = Mathf.Infinity;
     }
 
-    void Release()
+    void Release(float impulseForce = 0.0f)
     {
         if (joint != null)
         {
             // 銷毀關節組件，斷開連結
             Destroy(joint);
             joint = null;
+            Vector3 v = transform.forward;
+            v.y += 1.5f;
+            v *= impulseForce;
+            grabbedObject.AddForce(v, ForceMode.Impulse);
             grabbedObject = null;
         }
     }
@@ -73,6 +79,15 @@ public class GrabSystem : MonoBehaviour
                 isGrabbing = false;
                 Release();
             }
+        }
+    }
+
+    public void Throw(InputAction.CallbackContext context)
+    {
+        if (isGrabbing && !context.performed)
+        {
+            isGrabbing = false;
+            Release(throwForce);
         }
     }
 
