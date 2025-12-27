@@ -9,15 +9,20 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 942623160743518821}
+  - component: {fileID: 6522140160443813848}
   - component: {fileID: 2500527804544700953}
   - component: {fileID: 2276218531378341484}
   - component: {fileID: 9096624048141040036}
   - component: {fileID: 2090273628694914496}
+  - component: {fileID: 1391359716097952229}
   - component: {fileID: 8218853972464213528}
   - component: {fileID: 7444070026839256247}
   - component: {fileID: 5929641031307922971}
+  - component: {fileID: 7453391011152731361}
+  - component: {fileID: -7765459159641231733}
+  - component: {fileID: 4880615117717806030}
   m_Layer: 0
-  m_Name: Player
+  m_Name: PlayerNetworked
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -38,6 +43,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6522140160443813848
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7543236662115572753}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec377b77fd33d274da6f4c44109cf7ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TagController
+  tags: 010000000a000000
 --- !u!33 &2500527804544700953
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -144,6 +162,31 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 112
   m_CollisionDetection: 0
+--- !u!114 &1391359716097952229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7543236662115572753}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 1202868885
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &8218853972464213528
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -156,12 +199,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d99e20afa320f274abeed91c8224de79, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  ShowTopMostFoldoutHeaderGroup: 1
   cameraTransform: {fileID: 0}
   shouldFaceMoveDirection: 1
-  moveSpeed: 0.3
-  moveInAirAttenuation: 0.2
-  jumpHeight: 3
-  groundedThreshold: 1.05
+  moveSpeed: 0.25
+  jumpForce: 5
+  groundedThreshold: 1.15
+  jumpCooldown: 0.2
 --- !u!114 &7444070026839256247
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -221,8 +265,8 @@ MonoBehaviour:
     m_ActionName: 'Player/Jump[/Keyboard/space]'
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: GrabSystem, Assembly-CSharp
+      - m_Target: {fileID: 5929641031307922971}
+        m_TargetAssemblyTypeName: InteractionSystem, Assembly-CSharp
         m_MethodName: Grab
         m_Mode: 0
         m_Arguments:
@@ -236,7 +280,19 @@ MonoBehaviour:
     m_ActionId: 58c53c78-629c-4d4a-837f-59f7b607716b
     m_ActionName: 'Player/Grab[/Mouse/leftButton]'
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 5929641031307922971}
+        m_TargetAssemblyTypeName: InteractionSystem, Assembly-CSharp
+        m_MethodName: Throw
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: 0c58880d-f207-4b57-91c3-37f3ffe8a15c
     m_ActionName: 'Player/Throw[/Mouse/rightButton]'
   m_NeverAutoSwitchControlSchemes: 0
@@ -256,6 +312,90 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 70d1902064acb274ca1efc62d8b3587c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GrabSystem
+  ShowTopMostFoldoutHeaderGroup: 1
   grabRange: 1.5
   holdPoint: {fileID: 0}
+  throwForce: 5
   grabbedObject: {fileID: 0}
+  grab: 0
+  throwObj: 0
+--- !u!114 &7453391011152731361
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7543236662115572753}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8153b7697345f784fa5b251d561d27ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClientPlayerMove
+  ShowTopMostFoldoutHeaderGroup: 1
+  playerInput: {fileID: 7444070026839256247}
+  playerController: {fileID: 8218853972464213528}
+  interactionSystem: {fileID: 5929641031307922971}
+  cameraRoot: {fileID: 0}
+--- !u!114 &-7765459159641231733
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7543236662115572753}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 0
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 0
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 0
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
+--- !u!114 &4880615117717806030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7543236662115572753}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6c0be61502bb534f922ebb746851216, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkRigidbody
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkRigidbodyBaseExpanded: 0
+  UseRigidBodyForMotion: 0
+  AutoUpdateKinematicState: 1
+  AutoSetKinematicOnDespawn: 1

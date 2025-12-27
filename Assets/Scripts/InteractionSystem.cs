@@ -19,9 +19,17 @@ public class InteractionSystem : NetworkBehaviour
     public bool grab = false;
     public bool throwObj = false;
 
+    private PlayerController playerController;
+
     private bool isGrabbing = false;
+    private bool grabbindPlayer = false;
     private RigidbodyConstraints originalConstraints;
 
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+        playerController = GetComponent<PlayerController>();
+    }
 
     void TryGrab()
     {
@@ -33,6 +41,15 @@ public class InteractionSystem : NetworkBehaviour
 
             if (targetRb != null && !targetRb.isKinematic)
             {
+                TagController tagController = targetRb.GetComponent<TagController>();
+                if (tagController != null && tagController.HasTag(GameTags.Player))
+                {
+                    if (playerController.isGrabbed)
+                        return;
+                    PlayerController pc = targetRb.GetComponent<PlayerController>();
+                    pc.isGrabbed = true;
+                    grabbindPlayer= true;   
+                }
                 Vector3 targetPos = targetTr.position;
                 targetPos.y += 0.1f;
                 targetTr.position = targetPos;
@@ -62,6 +79,13 @@ public class InteractionSystem : NetworkBehaviour
     {
         if (joint != null)
         {
+            if (grabbindPlayer)
+            {
+                PlayerController pc = grabbedObject.GetComponent<PlayerController>();
+                pc.isGrabbed = false;
+                grabbindPlayer = false;
+            }
+
             joint.connectedBody = null;
             Destroy(joint);
             joint = null;
@@ -78,7 +102,7 @@ public class InteractionSystem : NetworkBehaviour
             Vector3 v = transform.forward;
             v.y += 1.5f;
             v *= impulseForce;
-            grabbedObject.AddForce(v, ForceMode.Impulse);
+            grabbedObject.AddForce(v, ForceMode.VelocityChange);
             grabbedObject = null;
         }
     }
@@ -113,7 +137,6 @@ public class InteractionSystem : NetworkBehaviour
     }
 
     // Throw Logics
-
     [Rpc(SendTo.Server)]
     public void ThrowRpc(bool throwInput)
     {
@@ -132,7 +155,6 @@ public class InteractionSystem : NetworkBehaviour
         ThrowRpc(throwObj);
     }
 
-    // 在編輯器中畫出輔助線，方便調整距離
     void OnDrawGizmos()
     {
         Gizmos.color = Color.yellow;

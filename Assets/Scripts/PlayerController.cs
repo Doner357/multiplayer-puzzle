@@ -1,117 +1,127 @@
 using System;
 using Unity.Netcode;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerController : NetworkBehaviour
 {
-
     [Header("Settings")]
     [SerializeField] public Transform cameraTransform;
-    [SerializeField] private bool shouldFaceMoveDirection = false;
-    [SerializeField] private float moveSpeed = 0.5f;
-    [SerializeField] private float moveInAirAttenuation = 0.2f;
-    [SerializeField] private float jumpHeight = 5f;
-    [SerializeField] private float groundedThreshold = 1.05f;
+    [SerializeField] private bool shouldFaceMoveDirection = true;
+    [SerializeField] private float moveSpeed = 0.25f;
+    [SerializeField] private float jumpForce = 5f;
+    [SerializeField] private float groundedThreshold = 1.15f;
 
-    public Vector2 move = Vector2.zero;
-    public bool jump = false;
+    [Header("Jump Settings")]
+    [SerializeField] private float jumpCooldown = 0.2f;
 
+    // Input States
+    private Vector2 moveInput;
+    private bool jumpInput;
+
+    // Physics States
+    public bool isGrabbed { get; set;}
     private Rigidbody rigid;
-    private Vector3 playerInput;
-    private Vector3 moveDirection;
-    private Vector3 velocity;
-
-    void Start()
+    private Vector3 serverMoveDirection;
+    private bool serverJumpInput;
+    private float lastJumpTime;
+    private Quaternion serverFaceRotation;
+    
+    // Components
+    public override void OnNetworkSpawn()
     {
         rigid = GetComponent<Rigidbody>();
+        isGrabbed = false;
     }
 
     void Update()
     {
-        if (IsOwner)
-        {
-            sendTransformRpc(playerInput, cameraTransform.forward, cameraTransform.right);
-        }
-    }
+        if (!IsOwner) return;
 
-    [Rpc(SendTo.Server)]
-    private void sendTransformRpc(Vector3 inputDir, Vector3 camForward, Vector3 camRight)
-    {
-        Vector3 forward = camForward;
-        Vector3 right = camRight;
+        Vector3 forward = cameraTransform.forward;
+        Vector3 right = cameraTransform.right;
 
         forward.y = 0;
         right.y = 0;
-
         forward.Normalize();
         right.Normalize();
 
-        moveDirection = forward * inputDir.z + right * inputDir.x;
+        Vector3 targetDirection = forward * moveInput.y + right * moveInput.x;
 
-        if (shouldFaceMoveDirection && moveDirection.sqrMagnitude > 0.001f)
+        if (shouldFaceMoveDirection && targetDirection.sqrMagnitude > 0.001f)
         {
-            Quaternion toRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, toRotation, 10.0f * Time.deltaTime);
+            Quaternion toRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
+            serverFaceRotation = Quaternion.Slerp(serverFaceRotation, toRotation, 10.0f * Time.deltaTime);
         }
 
-        moveDirection.y = inputDir.y;
+        serverMoveDirection = targetDirection;
+        serverMoveDirection.Normalize();
     }
 
     void FixedUpdate()
     {
+        if (IsOwner)
+        {
+            SubmitMovementServerRpc(serverMoveDirection, serverFaceRotation, jumpInput);
+            Debug.Log($"Client sent movement RPC. MoveDir: {serverMoveDirection}, Rotation: {transform.rotation}, Jumping: {jumpInput}");
+        }
+
         if (IsServer)
         {
-            bool grounded =IsGrounded();
-            velocity = moveDirection;
-            velocity.Normalize();
-            velocity = moveSpeed * velocity;
-            if (!grounded)
-            {
-                velocity *= moveInAirAttenuation;
-            }
-            velocity.y = Convert.ToSingle(grounded) * jumpHeight * moveDirection.y;
-            rigid.AddForce(velocity, ForceMode.Impulse);
-            //Debug.Log($"Velocity: {velocity}");
+            ApplyMovement();
+            ApplyJump();
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void SubmitMovementServerRpc(Vector3 moveDir, Quaternion rotation, bool isJumping)
+    {
+        if (isGrabbed)
+            return;
+        serverMoveDirection = moveDir;
+        transform.rotation = rotation;
+        serverJumpInput = isJumping;
+    }
+
+    private void ApplyMovement()
+    {
+        Vector3 velocity = serverMoveDirection * moveSpeed;
+        rigid.AddForce(velocity, ForceMode.Impulse);
+    }
+
+    private void ApplyJump()
+    {
+        if (serverJumpInput && IsGrounded() && Time.time >= lastJumpTime + jumpCooldown)
+        {
+            Vector3 currentVel = rigid.linearVelocity;
+            currentVel.y = 0; 
+            rigid.linearVelocity = currentVel;
+            
+            rigid.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            lastJumpTime = Time.time;
+            Debug.Log("Jump executed on server.");
         }
     }
 
     bool IsGrounded()
     {
-        return Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, groundedThreshold);
+        return Physics.Raycast(transform.position + Vector3.up * 0.1f, Vector3.down, groundedThreshold);
     }
 
-    // Move Logics
-    // [Rpc(SendTo.Server)]
-    public void MoveRpc(Vector2 moveInput)
-    {
-        playerInput.x = moveInput.x;
-        playerInput.z = moveInput.y;
-    }
-
+    // Input System Callbacks
     public void Move(InputAction.CallbackContext context)
     {
-        if (!IsOwner)
-            return;
-        move = context.ReadValue<Vector2>();
-        MoveRpc(move);
-    }
-
-    // Jump Logics
-    // [Rpc(SendTo.Server)]
-    public void JumpRpc(bool jumpInput)
-    {
-        // Debug.Log($"Jumpping {jumpInput}");
-        playerInput.y = Convert.ToSingle(jumpInput);
+        if (!IsOwner) return;
+        moveInput = context.ReadValue<Vector2>();
+        Debug.Log($"Move input received: {moveInput}");
     }
 
     public void Jump(InputAction.CallbackContext context)
     {
-        if (!IsOwner)
-            return;
-        jump = context.performed;
-        JumpRpc(jump);
+        if (!IsOwner) return;
+
+        jumpInput = context.performed;
+        Debug.Log($"Jump input received: {jumpInput}");
     }
 }
