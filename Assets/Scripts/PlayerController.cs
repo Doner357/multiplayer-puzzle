@@ -64,7 +64,6 @@ public class PlayerController : NetworkBehaviour
         if (IsOwner)
         {
             SubmitMovementServerRpc(serverMoveDirection, serverFaceRotation, jumpInput);
-            Debug.Log($"Client sent movement RPC. MoveDir: {serverMoveDirection}, Rotation: {transform.rotation}, Jumping: {jumpInput}");
         }
 
         if (IsServer)

@@ -2,31 +2,34 @@ using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.Events;
 
-public class PressurePlateMovement : MonoBehaviour
+public class PressurePlateBehaviour : NetworkBehaviour
 {
     [Header("Settings")]
     public Transform movingPart;
-    public float downDistance = 0.2f;
-    public float speed = 2.0f;
-    public string targetTag = "Player";
+    public float downDistance = 1.0f;
+    public float speed = 4.0f;
+    public GameTags targetTag = GameTags.Heavy;
+    public NetworkSignal linkedSignal;
 
-    [Header("Events")]
-    public UnityEvent onPressed;
-    public UnityEvent onReleased;
-
+    // Position Relating
     private Vector3 initialPos;
     private Vector3 targetPos;
     private Vector3 bottomPos;
-    private bool isAtBottom = false;
+
+    // State Relating
+    private Material plateMaterial;
+    private Color plateOriginalColor;
     private int objectsOnPlate = 0;
 
-    void Start()
+    public override void OnNetworkSpawn()
     {
         if (movingPart != null)
         {
             initialPos = movingPart.localPosition;
             targetPos = initialPos;
             bottomPos = initialPos - new Vector3(0, downDistance, 0);
+            plateMaterial = movingPart.GetComponent<Material>();
+            plateOriginalColor = plateMaterial.GetColor("_BaseColor");
         }
         else
         {
@@ -36,6 +39,12 @@ public class PressurePlateMovement : MonoBehaviour
 
     void Update()
     {
+        if (!IsServer)
+        {
+            Debug.Log("Not the server, exiting Update.");
+            return;
+        }
+
         if (movingPart != null)
         {
             movingPart.localPosition = Vector3.MoveTowards(
@@ -46,25 +55,31 @@ public class PressurePlateMovement : MonoBehaviour
             UpdatePressurePlateStatusRpc(movingPart.localPosition == bottomPos);
         }
     }
-    
+
     private void UpdatePressurePlateStatusRpc(bool pressed)
     {
         if (pressed)
         {
-            onPressed?.Invoke();
+            linkedSignal.SetState(true);
+            Debug.Log("Pressure Plate Pressed");
         }
         else
         {
-            onReleased?.Invoke();
+            linkedSignal.SetState(false);
         }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        TagController tagController = other.GetComponent<TagController>();
+        if (!IsServer)
+        {
+            Debug.Log("Not the server, exiting OnTriggerEnter.");
+            return;
+        }
+        TagController tagController = other.attachedRigidbody.GetComponent<TagController>();
         if (tagController != null)
         {
-            if (tagController.HasTag(GameTags.Heavy))
+            if (tagController.HasTag(targetTag))
             {
                 objectsOnPlate++;
                 if (objectsOnPlate >= 1)
@@ -77,10 +92,15 @@ public class PressurePlateMovement : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        TagController tagController = other.GetComponent<TagController>();
+        if (!IsServer)
+        {
+            Debug.Log("Not the server, exiting OnTriggerExit.");
+            return;
+        }
+        TagController tagController = other.attachedRigidbody.GetComponent<TagController>();
         if (tagController != null)
         {
-            if (tagController.HasTag(GameTags.Heavy))
+            if (tagController.HasTag(targetTag))
             {
                 objectsOnPlate--;
                 if (objectsOnPlate <= 0)
@@ -89,6 +109,22 @@ public class PressurePlateMovement : MonoBehaviour
                     targetPos = initialPos;
                 }
             }
+        }
+    }
+
+    public void SetPlateToGreen()
+    {
+        if (plateMaterial != null)
+        {
+            plateMaterial.SetColor("_BaseColor", Color.green);
+        }
+    }
+
+    public void ResetPlateColor()
+    {
+        if (plateMaterial != null)
+        {
+            plateMaterial.SetColor("_BaseColor", plateOriginalColor);
         }
     }
 }

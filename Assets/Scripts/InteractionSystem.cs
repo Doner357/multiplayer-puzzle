@@ -36,7 +36,7 @@ public class InteractionSystem : NetworkBehaviour
         RaycastHit hit;
         if (Physics.Raycast(transform.position, transform.forward, out hit, grabRange))
         {
-            Rigidbody targetRb = hit.collider.GetComponent<Rigidbody>();
+            Rigidbody targetRb = hit.collider.attachedRigidbody;
             Transform targetTr = targetRb.GetComponent<Transform>();
 
             if (targetRb != null && !targetRb.isKinematic)
