@@ -17,8 +17,6 @@ public class PressurePlateBehaviour : NetworkBehaviour
     private Vector3 bottomPos;
 
     // State Relating
-    private Material plateMaterial;
-    private Color plateOriginalColor;
     private int objectsOnPlate = 0;
 
     public override void OnNetworkSpawn()
@@ -28,8 +26,6 @@ public class PressurePlateBehaviour : NetworkBehaviour
             initialPos = movingPart.localPosition;
             targetPos = initialPos;
             bottomPos = initialPos - new Vector3(0, downDistance, 0);
-            plateMaterial = movingPart.GetComponent<Material>();
-            plateOriginalColor = plateMaterial.GetColor("_BaseColor");
         }
         else
         {
@@ -109,22 +105,6 @@ public class PressurePlateBehaviour : NetworkBehaviour
                     targetPos = initialPos;
                 }
             }
-        }
-    }
-
-    public void SetPlateToGreen()
-    {
-        if (plateMaterial != null)
-        {
-            plateMaterial.SetColor("_BaseColor", Color.green);
-        }
-    }
-
-    public void ResetPlateColor()
-    {
-        if (plateMaterial != null)
-        {
-            plateMaterial.SetColor("_BaseColor", plateOriginalColor);
         }
     }
 }

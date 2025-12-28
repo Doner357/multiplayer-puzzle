@@ -16,6 +16,10 @@ public class PlayerSpawner : NetworkBehaviour
         if (IsServer)
         {
             NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+            if (IsHost)
+            {
+                OnClientConnected(NetworkManager.Singleton.LocalClientId);
+            }
         }
     }
 
