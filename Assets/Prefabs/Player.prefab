@@ -187,7 +187,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3008082323
+  GlobalObjectIdHash: 894010680
   InScenePlacedSourceGlobalObjectIdHash: 3159481690
   DeferredDespawnTick: 0
   Ownership: 1
@@ -250,6 +250,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GrabSystem
   ShowTopMostFoldoutHeaderGroup: 1
   grabRange: 1.5
+  grabFixDist: 1
   holdPoint: {fileID: 0}
   throwForce: 5
   grabbedObject: {fileID: 0}

@@ -37,10 +37,10 @@ public class InteractionSystem : NetworkBehaviour
         if (Physics.Raycast(transform.position, transform.forward, out hit, grabRange))
         {
             Rigidbody targetRb = hit.collider.attachedRigidbody;
-            Transform targetTr = targetRb.GetComponent<Transform>();
 
             if (targetRb != null && !targetRb.isKinematic)
             {
+                Transform targetTr = targetRb.GetComponent<Transform>();
                 TagController tagController = targetRb.GetComponent<TagController>();
                 if (tagController != null && tagController.HasTag(GameTags.Player))
                 {
@@ -113,18 +113,19 @@ public class InteractionSystem : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void GrabRpc(bool grabInput)
     {
-        if (grabInput)
+        // is clicked left botton
+        if (!grabInput)
+            return;
+
+        if (!isGrabbing)
         {
-            if (!isGrabbing)
-            {
-                isGrabbing = true;
-                TryGrab();
-            }
-            else
-            {
-                isGrabbing = false;
-                Release();
-            }
+            isGrabbing = true;
+            TryGrab();
+        }
+        else
+        {
+            isGrabbing = false;
+            Release();
         }
     }
     public void Grab(InputAction.CallbackContext context)
