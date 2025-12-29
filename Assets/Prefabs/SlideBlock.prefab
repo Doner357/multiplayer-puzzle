@@ -12,9 +12,9 @@ GameObject:
   - component: {fileID: 1573690240241192846}
   - component: {fileID: 6743753987662015951}
   - component: {fileID: 3762045420173016663}
-  - component: {fileID: 5383543266535269663}
+  - component: {fileID: 5029857124208821225}
   m_Layer: 0
-  m_Name: SlideDoor
+  m_Name: SlideBlock
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -48,7 +48,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3442970426
+  GlobalObjectIdHash: 2907586229
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -74,17 +74,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LogicGate
   ShowTopMostFoldoutHeaderGroup: 1
-  requiredCondition:
-  - signal: {fileID: 0}
-    expectedState: 1
-  - signal: {fileID: 0}
-    expectedState: 1
+  requiredCondition: []
   OnAllConditionsMet:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 5383543266535269663}
-        m_TargetAssemblyTypeName: SlideDoor, Assembly-CSharp
-        m_MethodName: OpenDoor
+      - m_Target: {fileID: 5029857124208821225}
+        m_TargetAssemblyTypeName: SlideBlock, Assembly-CSharp
+        m_MethodName: Activate
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -97,9 +93,9 @@ MonoBehaviour:
   OnConditionsNotMet:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 5383543266535269663}
-        m_TargetAssemblyTypeName: SlideDoor, Assembly-CSharp
-        m_MethodName: CloseDoor
+      - m_Target: {fileID: 5029857124208821225}
+        m_TargetAssemblyTypeName: SlideBlock, Assembly-CSharp
+        m_MethodName: Deactivate
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -155,7 +151,7 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
---- !u!114 &5383543266535269663
+--- !u!114 &5029857124208821225
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -166,10 +162,11 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8eaa545bd8e21b24d92303b5179e9a76, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SlideDoor
+  m_EditorClassIdentifier: Assembly-CSharp::SlideBlock
   ShowTopMostFoldoutHeaderGroup: 1
-  slideDistance: 4
-  slideSpeed: 5
+  slideDistance: 3
+  slideSpeed: 2
+  moveDirection: {x: 0, y: 1, z: 0}
 --- !u!1 &9020278354620928043
 GameObject:
   m_ObjectHideFlags: 0
@@ -184,7 +181,7 @@ GameObject:
   - component: {fileID: 6892015534264464664}
   - component: {fileID: 6202425533824647631}
   m_Layer: 0
-  m_Name: DoorPart
+  m_Name: BlockPart
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -200,7 +197,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 1.11, y: 2.87, z: 2.12}
-  m_LocalScale: {x: 0.28258, y: 7.8213735, z: 10.003107}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6359419825663612229}

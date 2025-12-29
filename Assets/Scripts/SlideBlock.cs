@@ -1,11 +1,12 @@
 using Unity.Netcode;
 using UnityEngine;
 
-public class SlideDoor : NetworkBehaviour 
+public class SlideBlock : NetworkBehaviour 
 {
-    [Header("Door Settings")]
+    [Header("Block Settings")]
     public float slideDistance = 3.0f;
     public float slideSpeed = 2.0f;
+    public Vector3 moveDirection = Vector3.up;
 
     private Vector3 openPosition;
     private Vector3 closedPosition;
@@ -13,7 +14,7 @@ public class SlideDoor : NetworkBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public override void OnNetworkSpawn()
     {
-        openPosition = transform.position + transform.up * slideDistance; 
+        openPosition = transform.position + moveDirection * slideDistance; 
         closedPosition = transform.position;
         targetPosition = closedPosition;
     }
@@ -28,13 +29,13 @@ public class SlideDoor : NetworkBehaviour
         }
     }
 
-    public void OpenDoor()
+    public void Activate()
     {
         if (!IsServer) return; 
         targetPosition = openPosition;
     }
 
-    public void CloseDoor()
+    public void Deactivate()
     {
         if (!IsServer) return; 
         targetPosition = closedPosition;
