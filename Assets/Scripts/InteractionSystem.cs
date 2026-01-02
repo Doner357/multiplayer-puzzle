@@ -11,6 +11,7 @@ public class InteractionSystem : NetworkBehaviour
     public float grabRange = 1.5f;
     public Transform holdPoint;
     public float throwForce = 2.5f;
+    public Animator animator;
 
     [Header("Debug")]
     public Rigidbody grabbedObject;
@@ -24,6 +25,9 @@ public class InteractionSystem : NetworkBehaviour
     private bool isGrabbing = false;
     private bool grabbindPlayer = false;
     private RigidbodyConstraints originalConstraints;
+
+    // Animation
+    private string isHoldingStateName = "isHolding";
 
     public override void OnNetworkSpawn()
     {
@@ -55,6 +59,7 @@ public class InteractionSystem : NetworkBehaviour
                 targetTr.position = targetPos;
                 grabbedObject = targetRb;
                 CreateJoint(targetRb);
+                animator.SetBool(isHoldingStateName, true);
             }
         }
     }
@@ -104,6 +109,7 @@ public class InteractionSystem : NetworkBehaviour
             v *= impulseForce;
             grabbedObject.AddForce(v, ForceMode.VelocityChange);
             grabbedObject = null;
+            animator.SetBool(isHoldingStateName, false);
         }
     }
 

@@ -1,5 +1,6 @@
 using System;
 using Unity.Netcode;
+using UnityEditor.Animations;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -8,6 +9,7 @@ public class PlayerController : NetworkBehaviour
 {
     [Header("Settings")]
     [SerializeField] public Transform cameraTransform;
+    [SerializeField] public Animator animator;
     [SerializeField] private bool shouldFaceMoveDirection = true;
     [SerializeField] private float moveSpeed = 0.25f;
     [SerializeField] private float jumpForce = 5f;
@@ -27,6 +29,9 @@ public class PlayerController : NetworkBehaviour
     private bool serverJumpInput;
     private float lastJumpTime;
     private Quaternion serverFaceRotation;
+
+    // Animation
+    private string isRunningStateName = "isRunning";
     
     // Components
     public override void OnNetworkSpawn()
@@ -87,6 +92,14 @@ public class PlayerController : NetworkBehaviour
     {
         Vector3 velocity = serverMoveDirection * moveSpeed;
         rigid.AddForce(velocity, ForceMode.Impulse);
+        if (rigid.linearVelocity.sqrMagnitude > 0.25f)
+        {
+            animator.SetBool(isRunningStateName, true);
+        }
+        else
+        {
+            animator.SetBool(isRunningStateName, false);
+        }
     }
 
     private void ApplyJump()
