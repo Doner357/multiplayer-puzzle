@@ -1,4 +1,4 @@
-public enum GameTags
+public enum GameTag
 {
     None,
     Player,
@@ -10,5 +10,6 @@ public enum GameTags
     PowerUp,
     Checkpoint,
     SavePoint,
-    Heavy
+    Heavy,
+    MovingPlatform
 }

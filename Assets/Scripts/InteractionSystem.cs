@@ -45,8 +45,8 @@ public class InteractionSystem : NetworkBehaviour
             if (targetRb != null && !targetRb.isKinematic)
             {
                 Transform targetTr = targetRb.GetComponent<Transform>();
-                TagController tagController = targetRb.GetComponent<TagController>();
-                if (tagController != null && tagController.HasTag(GameTags.Player))
+                TagsController tagController = targetRb.GetComponent<TagsController>();
+                if (tagController != null && tagController.HasTag(GameTag.Player))
                 {
                     if (playerController.isGrabbed)
                         return;

@@ -37,6 +37,7 @@ public class PlayerSpawner : NetworkBehaviour
         Transform spawnPoint = spawnPoints[index];
 
         GameObject playerInstance = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
+        playerInstance.GetComponent<Respawnable>().SetNewSpawnPoint(spawnPoint.position, spawnPoint.rotation);
 
         var netObj = playerInstance.GetComponent<NetworkObject>();
         netObj.SpawnAsPlayerObject(clientId);

@@ -8,7 +8,7 @@ public class PressurePlateBehaviour : NetworkBehaviour
     public Transform movingPart;
     public float downDistance = 1.0f;
     public float speed = 4.0f;
-    public GameTags targetTag = GameTags.Heavy;
+    public GameTag targetTag = GameTag.Heavy;
     public NetworkSignal linkedSignal;
 
     // Position Relating
@@ -84,7 +84,7 @@ public class PressurePlateBehaviour : NetworkBehaviour
             Debug.Log("Not the server, exiting OnTriggerEnter.");
             return;
         }
-        TagController tagController = other.attachedRigidbody.GetComponent<TagController>();
+        TagsController tagController = other.attachedRigidbody.GetComponent<TagsController>();
         if (tagController != null)
         {
             if (tagController.HasTag(targetTag))
@@ -105,7 +105,7 @@ public class PressurePlateBehaviour : NetworkBehaviour
             Debug.Log("Not the server, exiting OnTriggerExit.");
             return;
         }
-        TagController tagController = other.attachedRigidbody.GetComponent<TagController>();
+        TagsController tagController = other.attachedRigidbody.GetComponent<TagsController>();
         if (tagController != null)
         {
             if (tagController.HasTag(targetTag))

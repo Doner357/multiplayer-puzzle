@@ -40,4 +40,25 @@ public class SlideBlock : NetworkBehaviour
         if (!IsServer) return; 
         targetPosition = closedPosition;
     }
+    
+    private void OnDrawGizmosSelected()
+    {
+        if (moveDirection == Vector3.zero) return;
+
+        Gizmos.color = Color.cyan;
+
+        Vector3 startPos = transform.position;
+
+        Vector3 direction = moveDirection.normalized; 
+        Vector3 endPos = startPos + direction * slideDistance;
+
+        Gizmos.DrawLine(startPos, endPos);
+
+        Gizmos.DrawWireCube(endPos, transform.localScale);
+
+        Gizmos.DrawSphere(endPos, 0.1f);
+        
+        Gizmos.color = new Color(0, 1, 1, 0.5f);
+        Gizmos.DrawLine(startPos, endPos);
+    }
 }
