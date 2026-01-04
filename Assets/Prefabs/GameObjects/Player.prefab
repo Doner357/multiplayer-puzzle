@@ -13,14 +13,15 @@ GameObject:
   - component: {fileID: 6985699911294568798}
   - component: {fileID: 804363795250710030}
   - component: {fileID: 6886488177500348439}
-  - component: {fileID: 2836984082075624942}
   - component: {fileID: 8948084171785510764}
   - component: {fileID: 2411565952461760891}
   - component: {fileID: 6431311777179732636}
+  - component: {fileID: 2836984082075624942}
   - component: {fileID: 1119640892896075723}
   - component: {fileID: 1257598317580129684}
   - component: {fileID: 8863481484579559936}
   - component: {fileID: 3081899865530668121}
+  - component: {fileID: -5233001727512487731}
   m_Layer: 3
   m_Name: Player
   m_TagString: Untagged
@@ -203,23 +204,6 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &2836984082075624942
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6681014126198161220}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8153b7697345f784fa5b251d561d27ba, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ClientPlayerMove
-  ShowTopMostFoldoutHeaderGroup: 1
-  playerInput: {fileID: 804363795250710030}
-  playerController: {fileID: 1119640892896075723}
-  interactionSystem: {fileID: 1257598317580129684}
-  cameraRoot: {fileID: 0}
 --- !u!114 &8948084171785510764
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -298,6 +282,23 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   TransitionStateInfoList: []
   m_Animator: {fileID: 5220829372167156448}
+--- !u!114 &2836984082075624942
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6681014126198161220}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8153b7697345f784fa5b251d561d27ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClientPlayerMove
+  ShowTopMostFoldoutHeaderGroup: 1
+  playerInput: {fileID: 804363795250710030}
+  playerController: {fileID: 1119640892896075723}
+  interactionSystem: {fileID: 1257598317580129684}
+  cameraRoot: {fileID: 0}
 --- !u!114 &1119640892896075723
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -315,9 +316,31 @@ MonoBehaviour:
   animator: {fileID: 5220829372167156448}
   shouldFaceMoveDirection: 1
   moveSpeed: 0.2
+  maxSpeed: 6
   jumpForce: 5
   groundedThreshold: 1.15
+  airControlFactor: 0.5
   jumpCooldown: 0.2
+  networkSendRate: 30
+  footstepRate: 2
+  onJump:
+    m_PersistentCalls:
+      m_Calls: []
+  onWalk:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: -5233001727512487731}
+        m_TargetAssemblyTypeName: PlayerSoundManager, Assembly-CSharp
+        m_MethodName: OnWalk
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1257598317580129684
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -351,8 +374,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Respawnable
   ShowTopMostFoldoutHeaderGroup: 1
-  initialPosition: {x: 0, y: 0, z: 0}
-  initialRotation: {x: 0, y: 0, z: 0, w: 0}
+  initialPosition:
+    m_InternalValue: {x: 0, y: 0, z: 0}
+  initialRotation:
+    m_InternalValue: {x: 0, y: 0, z: 0, w: 0}
   rb: {fileID: 0}
 --- !u!114 &3081899865530668121
 MonoBehaviour:
@@ -367,6 +392,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlatformStickiness
   ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &-5233001727512487731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6681014126198161220}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9e51a2ac8a197b4194bdc88ad50633f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerSoundManager
+  ShowTopMostFoldoutHeaderGroup: 1
+  jumpClip: {fileID: 0}
+  jumpVolume: 1
+  walkClip: {fileID: 8300000, guid: 389ce5c45ae672d4b92700010f19f32b, type: 3}
+  walkVolume: 0.2
 --- !u!1001 &3408865503087128583
 PrefabInstance:
   m_ObjectHideFlags: 0
