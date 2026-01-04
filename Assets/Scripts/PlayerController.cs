@@ -13,20 +13,18 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] public Animator animator;
     [SerializeField] private bool shouldFaceMoveDirection = true;
     [SerializeField] private float moveSpeed = 0.25f;
-    [SerializeField] private float maxSpeed = 5f; // New: Maximum horizontal speed
+    [SerializeField] private float maxSpeed = 5f; 
     [SerializeField] private float jumpForce = 5f;
     [SerializeField] private float groundedThreshold = 1.15f;
 
     [Header("Air Control")]
     [UnityEngine.Range(0f, 1f)]
-    [SerializeField] private float airControlFactor = 0.5f; // New: Multiplier for movement when in air
+    [SerializeField] private float airControlFactor = 0.5f; 
 
     [Header("Jump Settings")]
     [SerializeField] private float jumpCooldown = 0.2f;
 
-    [Header("Network Settings")]
-    [Tooltip("How many times per second to send data to server.")]
-    [SerializeField] private float networkSendRate = 30f;
+    // Removed Network Send Rate settings (reverted to FixedUpdate)
 
     [Header("Audio Settings")]
     [Tooltip("How many times per second to trigger the walk event.")]
@@ -49,7 +47,7 @@ public class PlayerController : NetworkBehaviour
     private Quaternion serverFaceRotation;
 
     // Timers
-    private float networkTimer;
+    // Removed networkTimer
     private float walkTimer;
 
     // Animation
@@ -60,7 +58,6 @@ public class PlayerController : NetworkBehaviour
     {
         rigid = GetComponent<Rigidbody>();
         isGrabbed = false;
-        networkTimer = 0f;
         walkTimer = 0f;
     }
 
@@ -68,7 +65,7 @@ public class PlayerController : NetworkBehaviour
     {
         if (!IsOwner) return;
 
-        // 1. Calculate Rotation Locally
+        // 1. Calculate Rotation & Direction Locally
         Vector3 forward = cameraTransform.forward;
         Vector3 right = cameraTransform.right;
 
@@ -82,19 +79,15 @@ public class PlayerController : NetworkBehaviour
         if (shouldFaceMoveDirection && targetDirection.sqrMagnitude > 0.001f)
         {
             Quaternion toRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
-            serverFaceRotation = Quaternion.Slerp(serverFaceRotation, toRotation, 10.0f * Time.deltaTime);
-            transform.rotation = serverFaceRotation;
+            // Smooth rotation locally for visual
+            transform.rotation = Quaternion.Slerp(serverFaceRotation, toRotation, 10.0f * Time.deltaTime);
+            serverFaceRotation = transform.rotation;
         }
+        
+        // Update the direction variable for FixedUpdate to use
+        serverMoveDirection = targetDirection.normalized;
 
-        // 2. Network Frequency Trigger (High Frequency)
-        networkTimer += Time.deltaTime;
-        if (networkTimer >= 1f / networkSendRate)
-        {
-            networkTimer = 0f;
-            SubmitMovementServerRpc(targetDirection.normalized, serverFaceRotation, jumpInput);
-        }
-
-        // 3. Footstep Frequency Trigger (Low Frequency)
+        // 2. Footstep Frequency Trigger (Keep this to avoid spamming audio)
         if (moveInput.sqrMagnitude > 0.01f && IsGrounded())
         {
             walkTimer += Time.deltaTime;
@@ -112,6 +105,14 @@ public class PlayerController : NetworkBehaviour
 
     void FixedUpdate()
     {
+        // 1. Client Side: Send Input to Server every physics frame (50Hz)
+        // This ensures maximum responsiveness at the cost of higher bandwidth
+        if (IsOwner)
+        {
+            SubmitMovementServerRpc(serverMoveDirection, serverFaceRotation, jumpInput);
+        }
+
+        // 2. Server Side: Apply Physics
         if (IsServer)
         {
             ApplyMovement();
@@ -124,8 +125,10 @@ public class PlayerController : NetworkBehaviour
     {
         if (isGrabbed)
             return;
+        
+        // Direct assignment from client input
         serverMoveDirection = moveDir;
-        transform.rotation = rotation;
+        transform.rotation = rotation; // Sync rotation directly
         serverJumpInput = isJumping;
     }
 
@@ -133,14 +136,14 @@ public class PlayerController : NetworkBehaviour
     {
         bool isGrounded = IsGrounded();
 
-        // 1. Calculate Force with Air Control
+        // Calculate Force with Air Control
         float currentForceMultiplier = isGrounded ? 1.0f : airControlFactor;
         Vector3 velocityForce = serverMoveDirection * moveSpeed * currentForceMultiplier;
 
-        // 2. Apply Impulse Force
+        // Apply Impulse Force
         rigid.AddForce(velocityForce, ForceMode.Impulse);
 
-        // 3. Clamp Horizontal Speed (Max Speed Limit)
+        // Clamp Horizontal Speed (Max Speed Limit)
         Vector3 horizontalVelocity = new Vector3(rigid.linearVelocity.x, 0, rigid.linearVelocity.z);
         if (horizontalVelocity.magnitude > maxSpeed)
         {
@@ -148,12 +151,8 @@ public class PlayerController : NetworkBehaviour
             rigid.linearVelocity = new Vector3(clampedVelocity.x, rigid.linearVelocity.y, clampedVelocity.z);
         }
 
-        // 4. Animation Logic Update
-        // Condition A: Has Input (serverMoveDirection is derived from input)
+        // Animation Logic
         bool hasInput = serverMoveDirection.sqrMagnitude > 0.01f;
-
-        // Condition B: Actually Moving AND on Ground
-        // We re-calculate horizontal magnitude squared to avoid sqrt operation cost
         bool isMovingPhysically = horizontalVelocity.sqrMagnitude > 0.1f;
         
         bool shouldAnimate = hasInput || (isMovingPhysically && isGrounded);

@@ -321,7 +321,7 @@ MonoBehaviour:
   groundedThreshold: 1.15
   airControlFactor: 0.5
   jumpCooldown: 0.2
-  networkSendRate: 30
+  networkSendRate: 60
   footstepRate: 2
   onJump:
     m_PersistentCalls:
