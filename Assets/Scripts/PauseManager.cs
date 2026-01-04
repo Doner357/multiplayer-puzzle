@@ -73,11 +73,26 @@ public class PauseManager : MonoBehaviour
         Cursor.visible = false;
     }
 
+    public void Respawn()
+    {
+        PlayerInput localPlayer = FindLocalPlayerInput();
+        if (localPlayer != null)
+        {
+            var respawnScript = localPlayer.GetComponent<Respawnable>();
+            if (respawnScript != null)
+            {
+                respawnScript.Respawn();
+                Resume(); 
+            }
+            else
+            {
+                Debug.LogWarning("Can't find Respawnable Script!");
+            }
+        }
+    }
+
     public void ExitToMenu()
     {
-        if (NetworkManager.Singleton != null)
-            NetworkManager.Singleton.Shutdown();
-
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 

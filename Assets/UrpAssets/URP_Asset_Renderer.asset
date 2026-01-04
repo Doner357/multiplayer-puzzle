@@ -26,43 +26,6 @@ MonoBehaviour:
     BlurQuality: 0
     Falloff: 100
     SampleCount: -1
---- !u!114 &-1258410055710997437
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a864f588276bab54f97335821add48a7, type: 3}
-  m_Name: LimSSR
-  m_EditorClassIdentifier: Limworks.Graphics.URP.SSR::LimWorks.Rendering.URP.ScreenSpaceReflections.LimSSR
-  m_Active: 1
-  Settings:
-    tracingMode: 1
-    stepStrideLength: 0.03
-    maxSteps: 128
-    downSample: 0
-    minSmoothness: 0.5
-    reflectSky: 1
-    ditherType: 1
-    SSR_Instance: {fileID: 0}
-    SSRShader: {fileID: 4800000, guid: 03f5601bba0a8034aa526644e8b9aaeb, type: 3}
---- !u!114 &-984768831824649195
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4268db87361095c4ca643764150c94d6, type: 3}
-  m_Name: DepthPyramid
-  m_EditorClassIdentifier: Limworks.Graphics.URP.SSR::LimWorks.Rendering.URP.ScreenSpaceReflections.DepthPyramid
-  m_Active: 0
-  depthPyramidShader: {fileID: 7200000, guid: b2ead2c2a0fb2bc4d8ff715cbf4b0403, type: 3}
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -89,9 +52,7 @@ MonoBehaviour:
     probeVolumeBlendStatesCS: {fileID: 0}
   m_RendererFeatures:
   - {fileID: -3507316338309240320}
-  - {fileID: -984768831824649195}
-  - {fileID: -1258410055710997437}
-  m_RendererFeatureMap: 006a27745f8253cf15243709f76555f2430491bfb83a89ee
+  m_RendererFeatureMap: 006a27745f8253cf
   m_UseNativeRenderPass: 0
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: e7b20d8e594294f4380ea14212e1b042, type: 2}

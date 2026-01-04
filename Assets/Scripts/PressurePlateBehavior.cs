@@ -21,13 +21,11 @@ public class PressurePlateBehaviour : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        // 自動查找 NetworkSignal（在父物件 PressurePlate 上）
         if (linkedSignal == null)
         {
             linkedSignal = GetComponentInParent<NetworkSignal>();
         }
 
-        // 自動查找 movingPart（就是父物件 PlateBase）
         if (movingPart == null)
         {
             movingPart = transform.parent;
