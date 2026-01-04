@@ -83,6 +83,7 @@ public class PlayerController : NetworkBehaviour
         {
             Quaternion toRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
             serverFaceRotation = Quaternion.Slerp(serverFaceRotation, toRotation, 10.0f * Time.deltaTime);
+            transform.rotation = serverFaceRotation;
         }
 
         // 2. Network Frequency Trigger (High Frequency)
