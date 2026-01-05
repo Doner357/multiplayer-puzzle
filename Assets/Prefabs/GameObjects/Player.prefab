@@ -222,9 +222,9 @@ MonoBehaviour:
   PositionInterpolationType: 2
   RotationInterpolationType: 2
   ScaleInterpolationType: 0
-  PositionLerpSmoothing: 1
+  PositionLerpSmoothing: 0
   PositionMaxInterpolationTime: 0.3
-  RotationLerpSmoothing: 1
+  RotationLerpSmoothing: 0
   RotationMaxInterpolationTime: 0.3
   ScaleLerpSmoothing: 1
   ScaleMaxInterpolationTime: 0.1
@@ -321,7 +321,6 @@ MonoBehaviour:
   groundedThreshold: 1.15
   airControlFactor: 0.5
   jumpCooldown: 0.2
-  networkSendRate: 60
   footstepRate: 2
   onJump:
     m_PersistentCalls:

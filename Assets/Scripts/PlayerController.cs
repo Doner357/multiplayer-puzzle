@@ -80,8 +80,7 @@ public class PlayerController : NetworkBehaviour
         {
             Quaternion toRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
             // Smooth rotation locally for visual
-            transform.rotation = Quaternion.Slerp(serverFaceRotation, toRotation, 10.0f * Time.deltaTime);
-            serverFaceRotation = transform.rotation;
+            serverFaceRotation = Quaternion.Slerp(serverFaceRotation, toRotation, 10.0f * Time.deltaTime);
         }
         
         // Update the direction variable for FixedUpdate to use
