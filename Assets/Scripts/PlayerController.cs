@@ -1,64 +1,198 @@
+using NUnit.Framework;
+using System;
+using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.InputSystem;
 
-// 這是必備組件的屬性，防止你忘記加 Rigidbody
 [RequireComponent(typeof(Rigidbody))]
-public class PlayerController : MonoBehaviour
+public class PlayerController : NetworkBehaviour
 {
     [Header("Settings")]
-    public float moveSpeed = 5f;
-    public float rotateSpeed = 10f;
-    public float jumpForce = 5f;
+    [SerializeField] public Transform cameraTransform;
+    [SerializeField] public Animator animator;
+    [SerializeField] private bool shouldFaceMoveDirection = true;
+    [SerializeField] private float moveSpeed = 0.25f;
+    [SerializeField] private float maxSpeed = 5f; 
+    [SerializeField] private float jumpForce = 5f;
+    [SerializeField] private float groundedThreshold = 1.15f;
 
-    private Rigidbody rb;
-    private Vector3 inputVector;
+    [Header("Air Control")]
+    [UnityEngine.Range(0f, 1f)]
+    [SerializeField] private float airControlFactor = 0.5f; 
 
-    // Start 在遊戲開始時執行一次
-    void Start()
+    [Header("Jump Settings")]
+    [SerializeField] private float jumpCooldown = 0.2f;
+
+    // Removed Network Send Rate settings (reverted to FixedUpdate)
+
+    [Header("Audio Settings")]
+    [Tooltip("How many times per second to trigger the walk event.")]
+    [SerializeField] private float footstepRate = 2f;
+
+    [Header("Events Trigger")]
+    public UnityEvent onJump;
+    public UnityEvent onWalk;
+
+    // Input States
+    private Vector2 moveInput;
+    private bool jumpInput;
+
+    // Physics States
+    public bool isGrabbed { get; set; }
+    private Rigidbody rigid;
+    private Vector3 serverMoveDirection;
+    private bool serverJumpInput;
+    private float lastJumpTime;
+    private Quaternion serverFaceRotation;
+
+    // Timers
+    // Removed networkTimer
+    private float walkTimer;
+
+    // Animation
+    private string isRunningStateName = "isRunning";
+
+    // Components
+    public override void OnNetworkSpawn()
     {
-        rb = GetComponent<Rigidbody>();
+        rigid = GetComponent<Rigidbody>();
+        isGrabbed = false;
+        walkTimer = 0f;
     }
 
-    // Update 每幀執行，適合處理 Input
     void Update()
     {
-        // 取得鍵盤輸入 (WASD 或 方向鍵)，回傳值為 -1 到 1
-        float h = Input.GetAxisRaw("Horizontal");
-        float v = Input.GetAxisRaw("Vertical");
+        if (!IsOwner) return;
 
-        // 建立移動向量 (忽略 Y 軸)
-        inputVector = new Vector3(h, 0, v).normalized;
+        // 1. Calculate Rotation & Direction Locally
+        Vector3 forward = cameraTransform.forward;
+        Vector3 right = cameraTransform.right;
 
-        // 跳躍邏輯 (簡單版：按空白鍵且垂直速度接近 0)
-        if (Input.GetKeyDown(KeyCode.Space) && Mathf.Abs(rb.linearVelocity.y) < 0.1f)
+        forward.y = 0;
+        right.y = 0;
+        forward.Normalize();
+        right.Normalize();
+
+        Vector3 targetDirection = forward * moveInput.y + right * moveInput.x;
+
+        if (shouldFaceMoveDirection && targetDirection.sqrMagnitude > 0.001f)
         {
-            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            Quaternion toRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
+            // Smooth rotation locally for visual
+            serverFaceRotation = Quaternion.Slerp(serverFaceRotation, toRotation, 10.0f * Time.deltaTime);
         }
-    }
+        
+        // Update the direction variable for FixedUpdate to use
+        serverMoveDirection = targetDirection.normalized;
 
-    // FixedUpdate 固定頻率執行 (預設 0.02秒)，所有物理運算必須寫在這裡！
-    void FixedUpdate()
-    {
-        MoveLogic();
-    }
-
-    void MoveLogic()
-    {
-        if (inputVector.magnitude > 0.1f)
+        // 2. Footstep Frequency Trigger (Keep this to avoid spamming audio)
+        if (moveInput.sqrMagnitude > 0.01f && IsGrounded())
         {
-            // 1. 移動：直接設定速度 (保留原本的 Y 軸速度以維持重力)
-            // Unity 6 建議使用 linearVelocity 取代舊版的 velocity
-            Vector3 newVelocity = inputVector * moveSpeed;
-            rb.linearVelocity = new Vector3(newVelocity.x, rb.linearVelocity.y, newVelocity.z);
-
-            // 2. 轉向：讓角色面向移動方向
-            Quaternion targetRotation = Quaternion.LookRotation(inputVector);
-            // Slerp 是一個平滑插值函數，讓轉身有過渡動畫
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotateSpeed * Time.fixedDeltaTime);
+            walkTimer += Time.deltaTime;
+            if (walkTimer >= 1f / footstepRate)
+            {
+                walkTimer = 0f;
+                onWalk?.Invoke();
+            }
         }
         else
         {
-            // 如果沒按鍵，水平速度歸零 (停止滑行)，但保留垂直重力
-            rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
+            walkTimer = 1f / footstepRate; 
+        }
+    }
+
+    void FixedUpdate()
+    {
+        // 1. Client Side: Send Input to Server every physics frame (50Hz)
+        // This ensures maximum responsiveness at the cost of higher bandwidth
+        if (IsOwner)
+        {
+            SubmitMovementServerRpc(serverMoveDirection, serverFaceRotation, jumpInput);
+        }
+
+        // 2. Server Side: Apply Physics
+        if (IsServer)
+        {
+            ApplyMovement();
+            ApplyJump();
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void SubmitMovementServerRpc(Vector3 moveDir, Quaternion rotation, bool isJumping)
+    {
+        if (isGrabbed)
+            return;
+        
+        // Direct assignment from client input
+        serverMoveDirection = moveDir;
+        transform.rotation = rotation; // Sync rotation directly
+        serverJumpInput = isJumping;
+    }
+
+    private void ApplyMovement()
+    {
+        bool isGrounded = IsGrounded();
+
+        // Calculate Force with Air Control
+        float currentForceMultiplier = isGrounded ? 1.0f : airControlFactor;
+        Vector3 velocityForce = serverMoveDirection * moveSpeed * currentForceMultiplier;
+
+        // Apply Impulse Force
+        rigid.AddForce(velocityForce, ForceMode.Impulse);
+
+        // Clamp Horizontal Speed (Max Speed Limit)
+        Vector3 horizontalVelocity = new Vector3(rigid.linearVelocity.x, 0, rigid.linearVelocity.z);
+        if (horizontalVelocity.magnitude > maxSpeed)
+        {
+            Vector3 clampedVelocity = horizontalVelocity.normalized * maxSpeed;
+            rigid.linearVelocity = new Vector3(clampedVelocity.x, rigid.linearVelocity.y, clampedVelocity.z);
+        }
+
+        // Animation Logic
+        bool hasInput = serverMoveDirection.sqrMagnitude > 0.01f;
+        bool isMovingPhysically = horizontalVelocity.sqrMagnitude > 0.1f;
+        
+        bool shouldAnimate = hasInput || (isMovingPhysically && isGrounded);
+
+        animator.SetBool(isRunningStateName, shouldAnimate);
+    }
+
+    private void ApplyJump()
+    {
+        if (serverJumpInput && IsGrounded() && Time.time >= lastJumpTime + jumpCooldown)
+        {
+            Vector3 currentVel = rigid.linearVelocity;
+            currentVel.y = 0;
+            rigid.linearVelocity = currentVel;
+
+            rigid.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            lastJumpTime = Time.time;
+            Debug.Log("Jump executed on server.");
+        }
+    }
+
+    bool IsGrounded()
+    {
+        return Physics.Raycast(transform.position + Vector3.up * 0.1f, Vector3.down, groundedThreshold);
+    }
+
+    public void Move(InputAction.CallbackContext context)
+    {
+        if (!IsOwner) return;
+        moveInput = context.ReadValue<Vector2>();
+    }
+
+    public void Jump(InputAction.CallbackContext context)
+    {
+        if (!IsOwner) return;
+
+        jumpInput = context.performed;
+
+        if (jumpInput && IsGrounded())
+        {
+            onJump?.Invoke();
         }
     }
 }
