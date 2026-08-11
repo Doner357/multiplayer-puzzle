@@ -92,5 +92,5 @@ ProjectSettings/
 ## Notes
 
 - Multiplayer-specific gameplay is not yet fully implemented in the visible runtime scripts.
-- The project is currently best treated as a foundation for cooperative puzzle mechanics and physics interaction experiments..
+- The project is currently best treated as a foundation for cooperative puzzle mechanics and physics interaction experiments.
 
